@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-fn parse_strs<T>(args: T) -> HashMap<String, Vec<String>>
+pub type Adict = HashMap<String, Vec<String>>;
+
+fn parse_strs<T>(args: T) -> Adict
 	where T: Iterator<Item = String>
 {
 	let mut pending_key = String::new();
@@ -20,7 +22,7 @@ fn parse_strs<T>(args: T) -> HashMap<String, Vec<String>>
 	
 }
 
-pub fn parse() -> HashMap<String, Vec<String>> {
+pub fn parse() -> Adict {
 	parse_strs(std::env::args())
 }
 
