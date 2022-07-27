@@ -1,4 +1,4 @@
-# autoarg [=self]
+# autoarg
 
 dead simple argument parser:
 
