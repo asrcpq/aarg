@@ -4,7 +4,8 @@ dead simple argument parser:
 
 * parameters are split by keys `--key`,
 
-* simply call `aarg::parse()` to get a `HashMap<Key, Vec<Values>>`
+* simply call `aarg::parse().unwrap()`
+to get a `HashMap<Key, Vec<Values>>`
 
 * empty keys are for beginning of command
 
@@ -12,11 +13,6 @@ dead simple argument parser:
 
 * "--" starts positional values, raw strings are preserved
 
+* quoted string will use backslash for escape, will not be considered as a key
+
 * example: see lib test
-
----
-
-## todo
-
-* values cannot start with "--"(like filename), maybe add arity to option
-like "--option-3 arg1 arg2 arg3"

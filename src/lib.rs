@@ -2,15 +2,25 @@ use std::collections::HashMap;
 
 pub type Adict = HashMap<String, Vec<String>>;
 
-fn parse_strs<T>(args: T) -> Adict
+#[derive(Debug)]
+pub enum AargError {
+	OpenQuote,
+	BrokenEscape,
+}
+
+fn parse_strs<T>(args: T) -> Result<Adict, AargError>
 	where T: Iterator<Item = String>
 {
 	let mut pending_key = String::new();
 	let mut pending_value = Vec::new();
 	let mut result = HashMap::new();
 	let mut positional_flag = false;
-	for arg in args {
-		if arg.starts_with("--") && !positional_flag {
+	for mut arg in args {
+		if positional_flag {
+			pending_value.push(arg);
+			continue
+		}
+		if arg.starts_with("--") {
 			if arg == "--" {
 				positional_flag = true;
 			}
@@ -18,15 +28,32 @@ fn parse_strs<T>(args: T) -> Adict
 			pending_key = arg;
 			pending_value = Vec::new();
 			continue;
+		} else if arg.starts_with('"') {
+			let mut iter = arg.chars();
+			iter.next();
+			if Some('"') != iter.next_back() {
+				return Err(AargError::OpenQuote);
+			}
+			let mut unescaped = Vec::new();
+			let mut escape_flag = false;
+			while let Some(ch) = iter.next() {
+				if ch == '\\' && !escape_flag {
+					escape_flag = true;
+				} else {
+					unescaped.push(ch);
+					escape_flag = false;
+				}
+			}
+			arg = unescaped.into_iter().collect();
 		}
 		pending_value.push(arg);
 	}
 	result.insert(pending_key, pending_value);
-	result
+	Ok(result)
 	
 }
 
-pub fn parse() -> Adict {
+pub fn parse() -> Result<Adict, AargError> {
 	parse_strs(std::env::args())
 }
 
@@ -40,12 +67,12 @@ mod test {
 			($($x:expr),*) => (vec![$($x.to_string()),*]);
 		}
 
-		let string = "foo bar --foo bar --foo foo foobar -- -- --foobar";
+		let string = "foo bar --foo bar --foo \"--\\\\\\\"foo\" foobar -- -- --foobar";
 		let mut truth = HashMap::default();
 		truth.insert("".to_string(), vs!["foo", "bar"]);
-		truth.insert("--foo".to_string(), vs!["foo", "foobar"]);
+		truth.insert("--foo".to_string(), vs!["--\\\"foo", "foobar"]);
 		truth.insert("--".to_string(), vs!["--", "--foobar"]);
-		let parsed = parse_strs(string.split_whitespace().map(|x| x.to_string()));
+		let parsed = parse_strs(string.split_whitespace().map(|x| x.to_string())).unwrap();
 		assert_eq!(parsed, truth);
 	}
 }
