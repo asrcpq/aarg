@@ -8,10 +8,14 @@ fn parse_strs<T>(args: T) -> Adict
 	let mut pending_key = String::new();
 	let mut pending_value = Vec::new();
 	let mut result = HashMap::new();
+	let mut positional_flag = false;
 	for arg in args {
-		if let Some(key) = arg.strip_prefix("--") {
+		if arg.starts_with("--") && !positional_flag {
+			if arg == "--" {
+				positional_flag = true;
+			}
 			result.insert(pending_key, pending_value);
-			pending_key = key.to_string();
+			pending_key = arg;
 			pending_value = Vec::new();
 			continue;
 		}
@@ -32,12 +36,15 @@ mod test {
 
 	#[test]
 	fn test_parse_strs() {
-		let string = "foo bar --foo bar --bar foo --foo foobar --foobar --foobar";
+		macro_rules! vs {
+			($($x:expr),*) => (vec![$($x.to_string()),*]);
+		}
+
+		let string = "foo bar --foo bar --foo foo foobar -- -- --foobar";
 		let mut truth = HashMap::default();
-		truth.insert("".to_string(), vec!["foo".to_string(), "bar".to_string()]);
-		truth.insert("foo".to_string(), vec!["foobar".to_string()]);
-		truth.insert("bar".to_string(), vec!["foo".to_string()]);
-		truth.insert("foobar".to_string(), vec![]);
+		truth.insert("".to_string(), vs!["foo", "bar"]);
+		truth.insert("--foo".to_string(), vs!["foo", "foobar"]);
+		truth.insert("--".to_string(), vs!["--", "--foobar"]);
 		let parsed = parse_strs(string.split_whitespace().map(|x| x.to_string()));
 		assert_eq!(parsed, truth);
 	}
