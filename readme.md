@@ -7,7 +7,7 @@ dead simple argument parser:
 * simply call `aarg::parse().unwrap()`
 to get a `HashMap<Key, Vec<Values>>`
 
-* empty keys are for beginning of command
+* empty key are for beginning of command
 
 * same key will overwrite
 
