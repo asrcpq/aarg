@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 pub type Adict = HashMap<String, Vec<String>>;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AargError {
 	OpenQuote,
 	BrokenEscape,
@@ -44,6 +44,9 @@ fn parse_strs<T>(args: T) -> Result<Adict, AargError>
 					escape_flag = false;
 				}
 			}
+			if escape_flag == true {
+				return Err(AargError::BrokenEscape);
+			}
 			arg = unescaped.into_iter().collect();
 		}
 		pending_value.push(arg);
@@ -74,5 +77,13 @@ mod test {
 		truth.insert("--".to_string(), vs!["--", "--foobar"]);
 		let parsed = parse_strs(string.split_whitespace().map(|x| x.to_string())).unwrap();
 		assert_eq!(parsed, truth);
+
+		let string = "foo \"foo\\\"";
+		let parsed = parse_strs(string.split_whitespace().map(|x| x.to_string())).unwrap_err();
+		assert_eq!(parsed, AargError::BrokenEscape);
+
+		let string = "foo \"foo";
+		let parsed = parse_strs(string.split_whitespace().map(|x| x.to_string())).unwrap_err();
+		assert_eq!(parsed, AargError::OpenQuote);
 	}
 }
